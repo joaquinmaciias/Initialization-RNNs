@@ -1,4 +1,4 @@
-## PENDIENTE: Implementar train loop
+## PENDIENTE: Comprobar train loop
 
 import torch
 import numpy as np
@@ -8,6 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 # other libraries
 from typing import Optional
 
+from tqdm import tqdm
 
 
 def MAE(outputs, targets):
@@ -17,7 +18,7 @@ def MAE(outputs, targets):
 @torch.enable_grad()
 def train_step(
     model: torch.nn.Module,
-    train_data: DataLoader,
+    train_loader: DataLoader,
     mean: float,
     std: float,
     loss: torch.nn.Module,
@@ -40,18 +41,48 @@ def train_step(
         epoch: epoch of the training.
         device: device for running operations.
     """
+    # define metric lists
+    loss_list: list[float] = []
+    mae_list: list[float] = []
 
-    return None
+    # Set model to train mode
+    model.train()
+
+    for batch in tqdm(train_loader, desc="Training"):
+        inputs = batch[:, :-1, :].to(device)
+        targets = batch[:, -1, :].to(device)
+
+        # Zero the parameter gradients
+        optimizer.zero_grad()
+
+        # Forward pass of our model -> get the predictions made by our model
+        outputs = model(inputs)
+
+        # Compute loss
+        loss_value = loss(outputs, targets)
+        loss_list.append(loss_value.item())
+
+        # Backward pass
+        loss_value.backward()
+
+        # Optimize the parameters
+        optimizer.step()
+
+        # Compute mae
+        mae_val = MAE(outputs, targets)
+        mae_list.append(mae_val.item())
+
+    # write on tensorboard
+    writer.add_scalar("train/loss", np.mean(loss_list), epoch)
+    writer.add_scalar("train/mae", np.mean(mae_list), epoch)
+    # print('Train mae:', np.mean(mae_list))
 
 
 @torch.no_grad()
 def val_step(
     model: torch.nn.Module,
-    val_data: DataLoader,
-    mean: float,
-    std: float,
+    val_loader: DataLoader,
     loss: torch.nn.Module,
-    scheduler: Optional[torch.optim.lr_scheduler.LRScheduler],
     writer: SummaryWriter,
     epoch: int,
     device: torch.device,
@@ -71,14 +102,37 @@ def val_step(
         device: device for running operations.
     """
 
-    return None
+    # define metric lists
+    loss_list: list[float] = []
+    mae_list: list[float] = []
+
+    # Set model to train mode
+    model.eval()
+
+    for batch in tqdm(val_loader, desc="Training"):
+        inputs = batch[:, :-1, :].to(device)
+        targets = batch[:, -1, :].to(device)
+
+        # Forward pass of our model -> get the predictions made by our model
+        outputs = model(inputs)
+
+        # Compute loss
+        loss_value = loss(outputs, targets)
+        loss_list.append(loss_value.item())
+
+        # Compute mae
+        mae_val = MAE(outputs, targets)
+        mae_list.append(mae_val.item())
+
+    # write on tensorboard
+    writer.add_scalar("val/loss", np.mean(loss_list), epoch)
+    writer.add_scalar("val/mae", np.mean(mae_list), epoch)
+    # print('Validation mae:', np.mean(mae_list))
 
 @torch.no_grad()
 def t_step(
     model: torch.nn.Module,
-    test_data: DataLoader,
-    mean: float,
-    std: float,
+    test_loader: DataLoader,
     device: torch.device,
 ) -> float:
     """
@@ -94,6 +148,18 @@ def t_step(
     Returns:
         mae of the test data.
     """
-    
 
-    return None
+    model.eval()
+    test_loss = 0
+
+    with torch.no_grad():
+        for batch in tqdm(test_loader, desc="Testing"):
+            inputs = batch[:, :-1, :].to(device)
+            targets = batch[:, -1, :].to(device)
+
+            outputs = model(inputs)
+            loss = loss(outputs, targets)
+
+            test_loss += loss.item()
+
+    return test_loss / len(test_loader)

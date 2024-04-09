@@ -1,4 +1,3 @@
-## PENDIENTE : Test loop
 
 # Deep learning libraries
 import torch

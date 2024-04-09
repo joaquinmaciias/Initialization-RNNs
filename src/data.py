@@ -26,7 +26,14 @@ def load_data(data_path: str,
     # We check if the Model_Data folder exists. If not, we create it.
 
     if not os.path.exists(data_path + "Model_Data/"):
-        os.makedirs(data_path + "Model_Data/")
+
+        # PENDIENTE ENRIQUE: Este es un cambio que he hecho yo para que no de error
+
+        # Previo:
+        # os.makedirs(data_path + "Model_Data/")
+        
+        os.makedirs(data_path + "Model_Data/train/")
+        os.makedirs(data_path + "Model_Data/test/")
 
         # We download the data
         train, test = download_data(data_path)
@@ -154,8 +161,8 @@ def process_data(data: list, sequence_size: int, start_token: int, end_token: in
     
 if __name__ == "__main__":
 
-    # out = load_data("data/", 6, 64, True, True, 0)
-
+    out = load_data("data/", 6, 64, True, True, 0)
+    print(out)
     pass
 
 

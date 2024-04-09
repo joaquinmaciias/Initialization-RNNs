@@ -103,7 +103,6 @@ optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 loss_function = MSELoss()
 
 ## PENDIENTE : Posibilidad de implementar un scheduler
-
 ## PENDIENTE : Implementar un early stopping
 
 ## PENDIENTE ENRIQUE: Sacar mean y std en el load data para los loops de train y val
