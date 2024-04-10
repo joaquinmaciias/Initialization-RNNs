@@ -9,11 +9,12 @@ import os
 import numpy as np
 import music21
 import muspy
+import re
 
 class MusicDataset(Dataset):
 
     def __init__(self, inputs, targets):
-        self.data = list(zip(inputs, targets))
+        self.data = [(inputs[i], targets[i]) for i in range(len(inputs))]
 
     def __len__(self):
         return len(self.data)
@@ -44,13 +45,15 @@ def load_data(data_path: str,
 
     if not os.path.exists(data_path + "Model_Data/"):
         os.makedirs(data_path + "Model_Data/")
-
+        print("Downloading data...")
         # We download the data
         train, test = download_data(data_path, train_pct)
 
     else:
         # We retrieve the data from the folder
         train_path = data_path + "Model_Data/train/"
+
+        print("Loading data...")
 
         train = []
 
@@ -64,7 +67,9 @@ def load_data(data_path: str,
 
                     for line in f:
 
-                        notes.append(line.strip())
+                        line = int(line.strip())
+
+                        notes.append(line)
 
                 train.append(notes)
         
@@ -82,7 +87,7 @@ def load_data(data_path: str,
 
                     for line in f:
 
-                        notes.append(line.strip())
+                        notes.append(int(line.strip()))
 
                 test.append(notes)
 
@@ -140,7 +145,8 @@ def download_data(path: str = "data/", train_pct: float = 0.8) -> list:
 
     train, test = random_split(files, [int(len(files) * train_pct), len(files) - int(len(files) * train_pct)])
 
-
+    train_clean = []
+    test_clean = []
     # We save the data in the Model_Data folder
 
     if not os.path.exists(path + "Model_Data/train/"):
@@ -148,24 +154,44 @@ def download_data(path: str = "data/", train_pct: float = 0.8) -> list:
 
         for i in range(len(train)):
 
+            file = []
+
             with open(path + "Model_Data/train/" + str(i) + ".txt", "w") as f:
 
                 for note in train[i]:
 
-                    f.write(str(note) + "\n")
+                    if len(note) > 1:
+
+                        print("ERROR")
+
+                    file.append(note[0])
+
+                    f.write(str(note[0]) + "\n")
+            
+            train_clean.append(file)
 
     if not os.path.exists(path + "Model_Data/test/"):
         os.makedirs(path + "Model_Data/test/")
 
         for i in range(len(test)):
 
+            file = []
+
             with open(path + "Model_Data/test/" + str(i) + ".txt", "w") as f:
 
                 for note in test[i]:
 
-                    f.write(str(note) + "\n")
+                    if len(note) > 1:
+                            
+                        print("ERROR")
+                    
+                    file.append(note[0])
+                    
+                    f.write(str(note[0]) + "\n")
+
+            test_clean.append(file)
     
-    return train, test
+    return train_clean, test_clean
 
 
 def process_data(data: list, context_size: int, start_token: int, end_token: int, pad_token: int) -> list:
@@ -204,9 +230,9 @@ def process_data(data: list, context_size: int, start_token: int, end_token: int
     
 if __name__ == "__main__":
 
-    # out = load_data("data/")
+    out = load_data("data/")
 
-    # print(out)
+    print(out)
 
     pass
 
