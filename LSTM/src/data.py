@@ -47,7 +47,7 @@ def load_data(data_path: str,
         os.makedirs(data_path + "Model_Data/")
         print("Downloading data...")
         # We download the data
-        train, test = download_data(data_path, train_pct)
+        train,val, test = download_data(data_path, train_pct)
 
     else:
         # We retrieve the data from the folder
@@ -72,6 +72,24 @@ def load_data(data_path: str,
                         notes.append(line)
 
                 train.append(notes)
+
+        val_path = data_path + "Model_Data/val/"
+
+        val = []
+
+        for file in os.listdir(val_path):
+                
+            if file.endswith(".txt"):
+
+                notes = []
+
+                with open(val_path + file, "r") as f:
+
+                    for line in f:
+
+                        notes.append(int(line.strip()))
+
+                val.append(notes)
         
         test_path = data_path + "Model_Data/test/"
 
@@ -101,24 +119,27 @@ def load_data(data_path: str,
 
     # We will now create the sequences
 
-    print(f'Data loaded successfully with {len(train)} training samples and {len(test)} testing samples.')
+    print(f'Data loaded successfully with {len(train)} training samples, {len(val)} validation samples and {len(test)} testing samples.')
 
     sequences_tr, targets_tr = process_data(train, context_size, start_token=388, end_token=389, pad_token=390)
+    sequences_val, targets_val = process_data(val, context_size, start_token=388, end_token=389, pad_token=390)
     sequences_ts, targets_ts = process_data(test, context_size, start_token=388, end_token=389, pad_token=390)
 
-    print(f'Data processed successfully with {len(sequences_tr)} training sequences and {len(sequences_ts)} testing sequences.')
+    print(f'Data processed successfully with {len(sequences_tr)} training sequences, {len(sequences_val)} validation sequences and {len(sequences_ts)} testing sequences.')
 
     # We create the datasets
 
     train_dataset = MusicDataset(sequences_tr, targets_tr)
+    val_dataset = MusicDataset(sequences_val, targets_val)
     test_dataset = MusicDataset(sequences_ts, targets_ts)
 
     # We create the dataloaders
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=num_workers)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=num_workers)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=num_workers)
 
-    return train_loader, test_loader
+    return train_loader, val_dataloader, test_loader
 
 
 def download_data(path: str = "data/", train_pct: float = 0.8) -> list:
@@ -145,8 +166,13 @@ def download_data(path: str = "data/", train_pct: float = 0.8) -> list:
 
     train, test = random_split(files, [int(len(files) * train_pct), len(files) - int(len(files) * train_pct)])
 
+    # We now split the train into train and val
+
+    train, val = random_split(train, [int(len(train) * train_pct), len(train) - int(len(train) * train_pct)])
+
     train_clean = []
     test_clean = []
+    val_clean = []
     # We save the data in the Model_Data folder
 
     if not os.path.exists(path + "Model_Data/train/"):
@@ -170,6 +196,27 @@ def download_data(path: str = "data/", train_pct: float = 0.8) -> list:
             
             train_clean.append(file)
 
+    if not os.path.exists(path + "Model_Data/val/"):
+        os.makedirs(path + "Model_Data/val/")
+
+        for i in range(len(val)):
+
+            file = []
+
+            with open(path + "Model_Data/val/" + str(i) + ".txt", "w") as f:
+
+                for note in val[i]:
+
+                    if len(note) > 1:
+
+                        print("ERROR")
+
+                    file.append(note[0])
+
+                    f.write(str(note[0]) + "\n")
+
+            val_clean.append(file)
+
     if not os.path.exists(path + "Model_Data/test/"):
         os.makedirs(path + "Model_Data/test/")
 
@@ -191,7 +238,7 @@ def download_data(path: str = "data/", train_pct: float = 0.8) -> list:
 
             test_clean.append(file)
     
-    return train_clean, test_clean
+    return train_clean, val_clean, test_clean
 
 
 def process_data(data: list, context_size: int, start_token: int, end_token: int, pad_token: int) -> list:
@@ -219,13 +266,6 @@ def process_data(data: list, context_size: int, start_token: int, end_token: int
         sequences[i] = sequences[i] + [pad_token] * (context_size - len(sequences[i]))
 
     return sequences, targets
-
-   
-
-
-
-    pass
-
 
     
 if __name__ == "__main__":
