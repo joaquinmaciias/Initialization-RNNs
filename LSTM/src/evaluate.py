@@ -8,9 +8,15 @@ from torch.jit import RecursiveScriptModule
 from typing import Final
 
 # Own modules
-from src.data import load_data
-from src.utils import set_seed, load_model
-from src.train_functions import t_step
+try:
+    from src.data import load_data
+    from src.utils import set_seed, load_model
+    from src.train_functions import t_step
+except:
+    from data import load_data
+    from utils import load_model
+    from train_functions import t_step
+    from main_tmp import SEED
 
 # static variables
 DATA_PATH: Final[str] = "data"

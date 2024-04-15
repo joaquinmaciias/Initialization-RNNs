@@ -20,6 +20,8 @@ def train_step(
     writer: SummaryWriter,
     epoch: int,
     device: torch.device,
+    h0: torch.Tensor = None,
+    c0: torch.Tensor = None,
 ) -> None:
     """
     This function train the model.
@@ -50,7 +52,8 @@ def train_step(
         optimizer.zero_grad()
 
         # Forward pass of our model -> get the predictions made by our model
-        outputs = model(inputs)
+
+        outputs = model(inputs, h0, c0)
 
         # Compute loss
         loss_value = loss(outputs, targets)
@@ -63,13 +66,23 @@ def train_step(
         optimizer.step()
 
         # Compute mae
-        mae_val = MAE(outputs, targets)
-        mae_list.append(mae_val.item())
+        # mae_val = MAE(outputs, targets)
+        # mae_list.append(mae_val.item())
 
     # write on tensorboard
-    writer.add_scalar("train/loss", np.mean(loss_list), epoch)
-    writer.add_scalar("train/mae", np.mean(mae_list), epoch)
+
+    if writer is not None:
+        writer.add_scalar("train/loss", np.mean(loss_list), epoch)
+        #writer.add_scalar("train/mae", np.mean(mae_list), epoch)
     # print('Train mae:', np.mean(mae_list))
+
+    print_every = 1
+    if epoch % print_every == 0:
+        print(f"Epoch {epoch}, Training Loss: {np.mean(loss_list)}")
+        #print(f"Epoch {epoch}, Training MAE: {np.mean(mae_list)}")
+
+    return np.mean(loss_list)
+
 
 
 @torch.no_grad()
@@ -105,6 +118,7 @@ def val_step(
 
     for inputs, targets in val_loader:
         
+        
         inputs, targets = inputs.to(device), targets.to(device)
 
         # Forward pass of our model -> get the predictions made by our model
@@ -115,13 +129,24 @@ def val_step(
         loss_list.append(loss_value.item())
 
         # Compute mae
-        mae_val = MAE(outputs, targets)
-        mae_list.append(mae_val.item())
+        # mae_val = MAE(outputs, targets)
+        # mae_list.append(mae_val.item())
 
     # write on tensorboard
-    writer.add_scalar("val/loss", np.mean(loss_list), epoch)
-    writer.add_scalar("val/mae", np.mean(mae_list), epoch)
+    if writer is not None:
+        writer.add_scalar("val/loss", np.mean(loss_list), epoch)
+        # writer.add_scalar("val/mae", np.mean(mae_list), epoch)
     # print('Validation mae:', np.mean(mae_list))
+
+    # Print losses
+    # Define print cadence
+    print_every = 1
+    if epoch % print_every == 0:
+        print(f"Epoch {epoch}, Val Loss: {np.mean(loss_list)}")
+        #print(f"Epoch {epoch}, Val MAE: {np.mean(mae_list)}")
+
+    return np.mean(loss_list)
+
 
 @torch.no_grad()
 def t_step(

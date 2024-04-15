@@ -1,204 +1,120 @@
-# deep learning libraries
-import torch
-import numpy as np
-from torch.jit import RecursiveScriptModule
-
-# other libraries
 import os
-import random
-import pandas as pd
-import music21
+import torch
+import torch.nn.functional as F
+from sklearn.manifold import TSNE
 
-
-@torch.no_grad()
-def parameters_to_double(model: torch.nn.Module) -> None:
-    """
-    This function transforms the model parameters to double.
+def save_model(model, model_path: str):
+    """Save the trained SkipGram model to a file, creating the directory if it does not exist.
 
     Args:
-        model: pytorch model.
-    """
+        model: The trained SkipGram model.
+        model_path: The path to save the model file, including directory and filename.
 
-    # TODO
-    for param in model.parameters():
-        param.data = param.data.double()
+    Returns:
+        The path where the model was saved.
+    """
+    # Extract the directory path from the model_path
+    directory = os.path.dirname(model_path)
     
-    return None
+    # Check if the directory exists, and create it if it does not
+    if not os.path.exists(directory):
+        os.makedirs(directory, exist_ok=True)
+    
+    # Save the model
+    torch.save(model.state_dict(), model_path)
+    return model_path
 
 
-def save_model(model: torch.nn.Module, name: str) -> None:
+def train_model(model, train_loader, test_loader, epochs, learning_rate, device, print_every=1000, patience=10):
     """
-    This function saves a model in the 'models' folder as a torch.jit.
-    It should create the 'models' if it doesn't already exist.
+    Train a Pytorch model.
 
     Args:
-        model: pytorch model.
-        name: name of the model (without the extension, e.g. name.pt).
+        model (torch.nn.Module): Pytorch model to train.
+        train_loader (torch.utils.data.DataLoader): DataLoader for the training set.
+        test_loader (torch.utils.data.DataLoader): DataLoader for the test set.
+        epochs (int): The number of epochs to train the model.
+        device (str): device where to train the model.
+        learning_rate (float): The learning rate for the optimizer.
+        print_every (int): Frequency of epochs to print training and test loss.
+        patience (int): The number of epochs to wait for improvement on the test loss before stopping training early.
     """
 
-    # create folder if it does not exist
-    if not os.path.isdir("models"):
-        os.makedirs("models")
+    # Define the loss function (CrossEntropyLoss) and optimizer (Adam)
+    optimzer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    criterion = torch.nn.CrossEntropyLoss()
 
-    # save scripted model
-    model_scripted: RecursiveScriptModule = torch.jit.script(model.cpu())
-    model_scripted.save(f"models/{name}.pt")
+    # Initialize variables for Early Stopping
+    best_loss = float('inf')
+    epochs_no_improve = 0
 
-    return None
+    model = model.to(device)
+    criterion = criterion.to(device)
 
+    for epoch in range(epochs):
+        # Train model
+        total_train_loss = 0
 
-def load_model(name: str) -> RecursiveScriptModule:
-    """
-    This function is to load a model from the 'models' folder.
+        model.train()
 
-    Args:
-        name: name of the model to load.
+        for inputs, targets in train_loader:
+            # Move input and target tensors to the device
+            inputs, targets = inputs.to(device), targets.to(device)
 
-    Returns:
-        model in torchscript.
-    """
+            # Zero the gradients
+            optimzer.zero_grad()
 
-    # define model
-    model: RecursiveScriptModule = torch.jit.load(f"models/{name}.pt")
+            # Forward pass
+            outputs = model(inputs)
 
-    return model
+            # Compute the loss
 
+            loss = criterion(outputs, targets)
 
-def set_seed(seed: int) -> None:
-    """
-    This function sets a seed and ensure a deterministic behavior.
+            # Backward pass
 
-    Args:
-        seed: seed number to fix radomness.
-    """
+            loss.backward()
 
-    # set seed in numpy and random
-    np.random.seed(seed)
-    random.seed(seed)
+            # Update the weights
 
-    # set seed and deterministic algorithms for torch
-    torch.manual_seed(seed)
-    torch.use_deterministic_algorithms(True, warn_only=True)
+            optimzer.step()
 
-    # Ensure all operations are deterministic on GPU
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
+            # Update the total loss
 
-    # for deterministic behavior on cuda >= 10.2
-    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
-
-    return None
+            total_train_loss += loss.item()
 
 
-def midi_to_notes(midi: str) -> pd.DataFrame:
-    """
-    This function converts a midi file to a list of notes.
 
-    Args:
-        midi: path to the midi file.
+        # Evaluate on test set
+        total_test_loss = 0
 
-    Returns:
-        list of notes.
-    """
+        with torch.no_grad():
+            model.eval()
+            for inputs, targets in test_loader:
+                # Move input and target tensors to the device
+                inputs, targets = inputs.to(device), targets.to(device)
 
-    # TODO
+                # Forward pass
+                outputs = model(inputs)
 
-    # Load midi file
+                # Compute the loss
 
-    midi_data = music21.converter.parse(midi)
+                loss = criterion(outputs, targets)
 
-    # Get the instrument parts
+                # Update the total loss
 
-    instrument = music21.instrument.partitionByInstrument(midi_data)
+                total_test_loss += loss.item()
 
-    # Get the notes
+        # Print losses
+        if epoch % print_every == 0:
+            print(f"Epoch {epoch}, Training Loss: {total_train_loss / len(train_loader)}, Test Loss: {total_test_loss / len(test_loader)}")
 
-    noteFilter = music21.stream.filters.ClassFilter('Note')
-
-    notes_to_parse = instrument.parts[0].recurse()
-
-    # Create a list of notes
-
-    notes = []
-
-    for element in notes_to_parse:
-
-        word = ""
-            
-        if isinstance(element, music21.note.Note):
-
-            '''
-            Word format:
-            - pitch
-            - octave
-            - duration
-            '''
-
-            word = "{}_{}_{}".format(element.pitch.name, element.pitch.octave, element.duration.type)
-            notes.append(word)
-
-        elif isinstance(element, music21.chord.Chord):
-                
-                # Chords will be saved by their name and duration
-
-                word = "{}_{}".format(element.fullName, element.duration.type)
-
-                print(word)
-                notes.append(word)
-            
-
-    return notes
-        
-
-def predict_sequence(model: torch.nn.Module,
-                         note_to_idx: dict,
-                         idx_to_note: dict,
-                         sequence_size: int) -> list:
-        """
-        This function predicts a musical sequence.
-
-        Args:
-            model: pytorch model.
-            note_to_idx: dictionary mapping notes to indices.
-            idx_to_note: dictionary mapping indices to notes.
-            sequence_size: size of the sequence to predict.
-
-        Returns:
-            list of predicted notes.
-        """
-
-        # Create a list to store the predicted notes
-
-        predicted_notes = []
-
-        # Create a random sequence to start the prediction
-
-        sequence = torch.randint(0, len(note_to_idx), (1, sequence_size)).long()
-
-        # Iterate over the sequence size
-
-        for i in range(sequence_size):
-
-            # Predict the next note
-
-            output, _ = model(sequence)
-
-            # Get the last output
-
-            last_output = output[:, -1, :]
-
-            # Get the index of the maximum value
-
-            max_index = torch.argmax(last_output, dim=1)
-
-            # Append the index to the sequence
-
-            sequence = torch.cat((sequence, max_index.view(1, 1)), dim=1)
-
-            # Append the note to the list
-
-            predicted_notes.append(idx_to_note[max_index.item()])
-
-        return predicted_notes
+        # Check for Early Stopping
+        if total_test_loss < best_loss:
+            best_loss = total_test_loss
+            epochs_no_improve = 0
+        else:
+            epochs_no_improve += 1
+            if epochs_no_improve >= patience:
+                print(f"Early stopping triggered at epoch {epoch}. No improvement in test loss for {patience} consecutive epochs.")
+                break  # Stop training early
