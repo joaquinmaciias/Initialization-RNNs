@@ -15,5 +15,5 @@ input_size = embedding_dim
 output_size = vocab_size
 hidden_size = 128
 learning_rate = 0.001
-epochs = 15
+epochs = 2
 num_layers = 1

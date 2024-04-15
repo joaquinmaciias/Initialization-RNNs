@@ -30,10 +30,13 @@ from utils import save_model # ,predict_sequence
 # Import load_data function
 from data import load_data
 
+# Import embeddings.py
 import embeddings as emb
 
+# Import parameters
 import parameters as p
 
+# Import initializations
 import initializations as init
 
 
@@ -65,12 +68,14 @@ torch.manual_seed(SEED)
 if torch.cuda.is_available():
     torch.cuda.manual_seed_all(SEED)
 
-# PENDIENTE ENRIQUE : Sacar    val_dataloader también
+ 
 tr_dataloader, val_dataloader, ts_dataloader = load_data(path, context_size, batch_size)
     
-# Comprbar que existe "runs/embeddings/"
 
+# Define the device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+# Check if "runs/embeddings/" exists
 
 if not os.path.exists("runs/embeddings/"):
 
@@ -92,46 +97,64 @@ else:
 #         param.requires_grad = False
 
 
-# Define name and writer
+### INITIALIZATIONS ###
 
-name: str = (
-    f"model_lr_{learning_rate}_hs_{hidden_size}_bs_{batch_size}_e_{epochs}"
-)
-writer: SummaryWriter = SummaryWriter(f"writer/{name}")
+# Define initializations
+initializations = [init.identity_initialization, init.identity_001_initialization, init.constant_initialization, 
+                   init.random_normal_initialization, init.random_uniform_initialization,
+                   init.truncated_normal_initialization, init.xavier_initialization, init.normalized_xavier_initialization,
+                   init.kaiming_initialization, init.orthogonal_initialization]
 
+initialization_names = ["identity","identity_001","zeros", "constant", "random_normal", "random_uniform",\
+                        "truncated_normal", "xavier", "normalized_xavier", "kaiming", "orthogonal"]
+    
+# Define the loop for the initializations
 
-# Create the model and migrate to device
-## PENDIENTE --> Definir output_size
+for initialization in initializations:
+    # Print the initialization
+    print(f"Training model with : {initialization_names[initializations.index(initialization)]}")
 
-model = MyModel(pt_model,input_size, hidden_size, output_size, num_layers).to(device)
-
-# PENDIENTE --> Definir h0 y c0 : Joaquin
-
-h0 = init.init_hidden(hidden_size, batch_size, num_layers, device)
-c0 = init.init_hidden(hidden_size, batch_size, num_layers, device)
-
-
-# Define optimizer and loss function (MAE will be calculated in the evaluation step)
-optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-loss_function = CrossEntropyLoss()
-
-print(f"Training model in {device}...")
-
-# Training loop
-for epoch in tqdm(range(epochs)):
-
-    # Implement training loop
-    train_step(model=model,train_loader=tr_dataloader,
-        loss=loss_function, optimizer=optimizer,writer=writer,epoch=epoch,device=device,h0=None,c0=None
+    # Define name and writer
+    name: str = (
+        f"model_init_{initialization_names[initializations.index(initialization)]}_lr_{learning_rate}_hs_{hidden_size}_bs_{batch_size}_e_{epochs}"
     )
+    writer: SummaryWriter = SummaryWriter(f"writer/{name}")
 
-    # Implement validation loop
-    val_step(model=model, val_loader=val_dataloader, loss=loss_function, writer=writer, epoch=epoch, device=device)
+    ## PENDIENTE --> Definir output_size
 
-path = "runs/models/"
+    # Initialize the weights
+    # PENDIENTE -> Comprobar si los shapes son correctos
+    # FUENTE: https://discuss.pytorch.org/t/how-to-initialize-weights-bias-of-rnn-lstm-gru/2879/2
+    
+    # check if the initialization needs more than one parameter
+    weights = {'weight_ih': torch.Tensor(initialization((input_size, 4*hidden_size))),
+                'weight_hh': torch.Tensor(initialization((hidden_size, 4*hidden_size)))}
+        
+    # Create the model and migrate to device
+    model = MyModel(pt_model,input_size, hidden_size, output_size, num_layers, weights).to(device)
 
-# Save the model
-save_model(model, path +name)
+
+    # Define optimizer and loss function (MAE will be calculated in the evaluation step)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    loss_function = CrossEntropyLoss()
+
+    print(f"Training model in {device}...")
+
+    # Training loop
+    for epoch in tqdm(range(epochs)):
+
+        # Implement training loop
+        train_step(model=model,train_loader=tr_dataloader,
+            loss=loss_function, optimizer=optimizer,writer=writer,epoch=epoch,device=device
+        )
+
+        # Implement validation loop
+        val_step(model=model, val_loader=val_dataloader, loss=loss_function, writer=writer, epoch=epoch, device=device)
+
+    path = "runs/models/"
+
+    # Save the model
+    save_model(model, path +name)
 
 # Execute the evaluate.py
 # mae = main_eval(name)

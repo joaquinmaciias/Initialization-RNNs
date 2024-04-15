@@ -19,9 +19,7 @@ def train_step(
     optimizer: torch.optim.Optimizer,
     writer: SummaryWriter,
     epoch: int,
-    device: torch.device,
-    h0: torch.Tensor = None,
-    c0: torch.Tensor = None,
+    device: torch.device
 ) -> None:
     """
     This function train the model.
@@ -53,7 +51,7 @@ def train_step(
 
         # Forward pass of our model -> get the predictions made by our model
 
-        outputs = model(inputs, h0, c0)
+        outputs = model(inputs)
 
         # Compute loss
         loss_value = loss(outputs, targets)
