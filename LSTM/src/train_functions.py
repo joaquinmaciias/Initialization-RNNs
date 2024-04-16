@@ -6,11 +6,6 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 
-
-def MAE(outputs, targets):
-    return torch.mean(torch.abs(outputs - targets))
-
-
 @torch.enable_grad()
 def train_step(
     model: torch.nn.Module,
@@ -63,21 +58,15 @@ def train_step(
         # Optimize the parameters
         optimizer.step()
 
-        # Compute mae
-        # mae_val = MAE(outputs, targets)
-        # mae_list.append(mae_val.item())
 
     # write on tensorboard
 
     if writer is not None:
         writer.add_scalar("train/loss", np.mean(loss_list), epoch)
-        #writer.add_scalar("train/mae", np.mean(mae_list), epoch)
-    # print('Train mae:', np.mean(mae_list))
 
     print_every = 1
     if epoch % print_every == 0:
         print(f"Epoch {epoch}, Training Loss: {np.mean(loss_list)}")
-        #print(f"Epoch {epoch}, Training MAE: {np.mean(mae_list)}")
 
     return np.mean(loss_list)
 
@@ -109,7 +98,6 @@ def val_step(
 
     # define metric lists
     loss_list: list[float] = []
-    mae_list: list[float] = []
 
     # Set model to train mode
     model.eval()
@@ -126,22 +114,17 @@ def val_step(
         loss_value = loss(outputs, targets)
         loss_list.append(loss_value.item())
 
-        # Compute mae
-        # mae_val = MAE(outputs, targets)
-        # mae_list.append(mae_val.item())
 
     # write on tensorboard
     if writer is not None:
         writer.add_scalar("val/loss", np.mean(loss_list), epoch)
-        # writer.add_scalar("val/mae", np.mean(mae_list), epoch)
-    # print('Validation mae:', np.mean(mae_list))
+
 
     # Print losses
     # Define print cadence
     print_every = 1
     if epoch % print_every == 0:
         print(f"Epoch {epoch}, Val Loss: {np.mean(loss_list)}")
-        #print(f"Epoch {epoch}, Val MAE: {np.mean(mae_list)}")
 
     return np.mean(loss_list)
 

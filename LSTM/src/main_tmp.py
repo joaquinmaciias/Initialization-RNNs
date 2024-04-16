@@ -39,6 +39,9 @@ import parameters as p
 # Import initializations
 import initializations as init
 
+# Import visualizations
+import visualizations as vis
+
 
 # Paths
 path = 'data/'
@@ -127,10 +130,6 @@ for initialization in initializations:
     # PENDIENTE -> Comprobar si los shapes son correctos
     # FUENTE: https://discuss.pytorch.org/t/how-to-initialize-weights-bias-of-rnn-lstm-gru/2879/2
     
-    # check if the initialization needs more than one parameter
-    # weights = {'weight_ih': torch.Tensor(initialization((input_size, 4*hidden_size))),
-    #             'weight_hh': torch.Tensor(initialization((hidden_size, 4*hidden_size)))}
-    
     weights = {'weight_ih': torch.Tensor(initialization((4*hidden_size,input_size))),
                 'weight_hh': torch.Tensor(initialization((4*hidden_size,hidden_size)))}
 
@@ -144,22 +143,53 @@ for initialization in initializations:
     loss_function = CrossEntropyLoss()
 
     print(f"Training model in {device}...")
+    
+    # Loss and MAE lists for the visualization
+    train_loss_list = []
+    val_loss_list = []
 
     # Training loop
     for epoch in tqdm(range(epochs)):
 
         # Implement training loop
-        train_step(model=model,train_loader=tr_dataloader,
+        train_loss = train_step(model=model,train_loader=tr_dataloader,
             loss=loss_function, optimizer=optimizer,writer=writer,epoch=epoch,device=device
         )
 
         # Implement validation loop
-        val_step(model=model, val_loader=val_dataloader, loss=loss_function, writer=writer, epoch=epoch, device=device)
+        val_loss = val_step(model=model, val_loader=val_dataloader, loss=loss_function, writer=writer, epoch=epoch, device=device)
+
+        # Append the loss
+        train_loss_list.append(train_loss)
+        val_loss_list.append(val_loss)
+
 
     path = "runs/models/"
+    txt_path = "runs/models_data"
 
     # Save the model
     save_model(model, path +name)
+
+    # Save mae and loss data in txt file
+    with open(f"{txt_path}{name}_loss.txt", "w") as f:
+        f.write(f"Train Loss: {train_loss_list}\n")
+        f.write(f"Validation Loss: {val_loss_list}\n")
+    
+
+
+    # Create the visualization - Loss
+    vis.line_plot(
+        x_values=range(epochs),
+        y1_values=train_loss_list,
+        y2_values=val_loss_list,
+        x_label="Epochs",
+        y_label="Loss",
+        title=f"Loss Plot - {initialization_names[initializations.index(initialization)]}",
+        y1_label="Train Loss",
+        y2_label="Validation Loss",
+        vis_name=f"{name}_loss"
+    )
+
 
 # Execute the evaluate.py
 # mae = main_eval(name)
