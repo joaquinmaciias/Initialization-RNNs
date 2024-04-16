@@ -105,9 +105,10 @@ initializations = [init.identity_initialization, init.identity_001_initializatio
                    init.truncated_normal_initialization, init.xavier_initialization, init.normalized_xavier_initialization,
                    init.kaiming_initialization, init.orthogonal_initialization]
 
-initialization_names = ["identity","identity_001","zeros", "constant", "random_normal", "random_uniform",\
-                        "truncated_normal", "xavier", "normalized_xavier", "kaiming", "orthogonal"]
-    
+initialization_names = ["identity","identity_001","zeros", "constant", "random_normal", "random_uniform",
+                       "truncated_normal", "xavier", "normalized_xavier", "kaiming", "orthogonal"]
+
+
 # Define the loop for the initializations
 
 for initialization in initializations:
@@ -127,9 +128,13 @@ for initialization in initializations:
     # FUENTE: https://discuss.pytorch.org/t/how-to-initialize-weights-bias-of-rnn-lstm-gru/2879/2
     
     # check if the initialization needs more than one parameter
-    weights = {'weight_ih': torch.Tensor(initialization((input_size, 4*hidden_size))),
-                'weight_hh': torch.Tensor(initialization((hidden_size, 4*hidden_size)))}
-        
+    # weights = {'weight_ih': torch.Tensor(initialization((input_size, 4*hidden_size))),
+    #             'weight_hh': torch.Tensor(initialization((hidden_size, 4*hidden_size)))}
+    
+    weights = {'weight_ih': torch.Tensor(initialization((4*hidden_size,input_size))),
+                'weight_hh': torch.Tensor(initialization((4*hidden_size,hidden_size)))}
+
+
     # Create the model and migrate to device
     model = MyModel(pt_model,input_size, hidden_size, output_size, num_layers, weights).to(device)
 
