@@ -56,9 +56,9 @@ def train_embedding(train, val, test, context_size, embedding_dim, epochs, learn
 
     for epoch in range(epochs):
         
-        loss_train = train_step(model, train, criterion, optimzer, writer, epoch, device)
+        loss_train, accuracy_train = train_step(model, train, criterion, optimzer, writer, epoch, device)
         
-        loss_val = val_step(model, val, criterion,writer, epoch, device)
+        loss_val, accuracy_val = val_step(model, val, criterion,writer, epoch, device)
 
         if loss_val < best_loss:
             best_loss = loss_val

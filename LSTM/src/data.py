@@ -7,7 +7,6 @@ from torch.utils.data import Dataset, DataLoader, random_split
 import os
 
 import numpy as np
-import music21
 import muspy
 import re
 
@@ -121,9 +120,9 @@ def load_data(data_path: str,
 
     print(f'Data loaded successfully with {len(train)} training samples, {len(val)} validation samples and {len(test)} testing samples.')
 
-    sequences_tr, targets_tr = process_data(train, context_size, start_token=388, end_token=389, pad_token=390)
-    sequences_val, targets_val = process_data(val, context_size, start_token=388, end_token=389, pad_token=390)
-    sequences_ts, targets_ts = process_data(test, context_size, start_token=388, end_token=389, pad_token=390)
+    sequences_tr, targets_tr = process_data(train, context_size, start_token=356, end_token=357, pad_token=358)
+    sequences_val, targets_val = process_data(val, context_size, start_token=356, end_token=357, pad_token=358)
+    sequences_ts, targets_ts = process_data(test, context_size, start_token=356, end_token=357, pad_token=358)
 
     print(f'Data processed successfully with {len(sequences_tr)} training sequences, {len(sequences_val)} validation sequences and {len(sequences_ts)} testing sequences.')
 
@@ -156,7 +155,7 @@ def download_data(path: str = "data/", train_pct: float = 0.8) -> list:
 
             music = muspy.read_midi(path + "MIDI_Files/" + file)
 
-            events = muspy.to_event_representation(music, encode_velocity=True)
+            events = muspy.to_event_representation(music, encode_velocity=False)
 
             files.append(events)
 

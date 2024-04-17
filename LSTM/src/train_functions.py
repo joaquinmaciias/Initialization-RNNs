@@ -4,6 +4,7 @@ import torch
 import numpy as np
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+from utils import accuracy
 
 
 @torch.enable_grad()
@@ -32,7 +33,7 @@ def train_step(
     """
     # define metric lists
     loss_list: list[float] = []
-    mae_list: list[float] = []
+    accuracy_list: list[float] = []
 
     # Set model to train mode
     model.train()
@@ -58,6 +59,10 @@ def train_step(
         # Optimize the parameters
         optimizer.step()
 
+        # Compute accuracy
+        acc = accuracy(outputs, targets)
+        accuracy_list.append(acc)
+
 
     # write on tensorboard
 
@@ -66,9 +71,9 @@ def train_step(
 
     print_every = 1
     if epoch % print_every == 0:
-        print(f"Epoch {epoch}, Training Loss: {np.mean(loss_list)}")
+        print(f"Epoch {epoch}, Training Loss: {np.mean(loss_list)}, Training Accuracy: {np.mean(accuracy_list)}")
 
-    return np.mean(loss_list)
+    return np.mean(loss_list), np.mean(accuracy_list)
 
 
 
@@ -98,6 +103,7 @@ def val_step(
 
     # define metric lists
     loss_list: list[float] = []
+    accuracy_list: list[float] = []
 
     # Set model to train mode
     model.eval()
@@ -114,6 +120,10 @@ def val_step(
         loss_value = loss(outputs, targets)
         loss_list.append(loss_value.item())
 
+        # Compute accuracy
+        acc = accuracy(outputs, targets)
+        accuracy_list.append(acc)
+
 
     # write on tensorboard
     if writer is not None:
@@ -124,9 +134,9 @@ def val_step(
     # Define print cadence
     print_every = 1
     if epoch % print_every == 0:
-        print(f"Epoch {epoch}, Val Loss: {np.mean(loss_list)}")
+        print(f"Epoch {epoch}, Val Loss: {np.mean(loss_list)}, Val Accuracy: {np.mean(accuracy_list)}")
 
-    return np.mean(loss_list)
+    return np.mean(loss_list), np.mean(accuracy_list)
 
 
 @torch.no_grad()
