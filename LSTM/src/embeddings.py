@@ -24,12 +24,14 @@ class PretrainedModel(nn.Module):
         super(PretrainedModel, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
         self.linear = nn.Linear(embedding_dim, vocab_size)
+
         self.embedding_dim = embedding_dim
         self.context_size = context_size
 
     def forward(self, context_idxs):
         embedded = torch.sum(self.embedding(context_idxs), dim=1)
         out = self.linear(embedded)
+
         return out
     
 def train_embedding(train, val, test, context_size, embedding_dim, epochs, learning_rate, patience, vocab_size, device):
@@ -54,9 +56,9 @@ def train_embedding(train, val, test, context_size, embedding_dim, epochs, learn
 
     for epoch in range(epochs):
         
-        loss_train = train_step(model, train, criterion, optimzer, writer, epoch, device)
+        loss_train, accuracy_train = train_step(model, train, criterion, optimzer, writer, epoch, device)
         
-        loss_val = val_step(model, val, criterion,writer, epoch, device)
+        loss_val, accuracy_val = val_step(model, val, criterion,writer, epoch, device)
 
         if loss_val < best_loss:
             best_loss = loss_val
@@ -89,7 +91,7 @@ if __name__ == "__main__":
 
     context_size = p.context_size
     embedding_dim = p.embedding_dim
-    epochs = p.epochs
+    epochs = p.epochs_emb
     learning_rate = p.learning_rate_emb
     patience = p.patience
     vocab_size = p.vocab_size

@@ -4,11 +4,7 @@ import torch
 import numpy as np
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-
-
-
-def MAE(outputs, targets):
-    return torch.mean(torch.abs(outputs - targets))
+from utils import accuracy
 
 
 @torch.enable_grad()
@@ -19,7 +15,7 @@ def train_step(
     optimizer: torch.optim.Optimizer,
     writer: SummaryWriter,
     epoch: int,
-    device: torch.device,
+    device: torch.device
 ) -> None:
     """
     This function train the model.
@@ -37,7 +33,7 @@ def train_step(
     """
     # define metric lists
     loss_list: list[float] = []
-    mae_list: list[float] = []
+    accuracy_list: list[float] = []
 
     # Set model to train mode
     model.train()
@@ -50,8 +46,8 @@ def train_step(
         optimizer.zero_grad()
 
         # Forward pass of our model -> get the predictions made by our model
+
         outputs = model(inputs)
-        print(outputs.shape, targets.shape)
 
         # Compute loss
         loss_value = loss(outputs, targets)
@@ -63,23 +59,21 @@ def train_step(
         # Optimize the parameters
         optimizer.step()
 
-        # Compute mae
-        # mae_val = MAE(outputs, targets)
-        # mae_list.append(mae_val.item())
+        # Compute accuracy
+        acc = accuracy(outputs, targets)
+        accuracy_list.append(acc)
+
 
     # write on tensorboard
 
     if writer is not None:
         writer.add_scalar("train/loss", np.mean(loss_list), epoch)
-        writer.add_scalar("train/mae", np.mean(mae_list), epoch)
-    # print('Train mae:', np.mean(mae_list))
 
     print_every = 1
     if epoch % print_every == 0:
-        print(f"Epoch {epoch}, Training Loss: {np.mean(loss_list)}")
-        print(f"Epoch {epoch}, Training MAE: {np.mean(mae_list)}")
+        print(f"Epoch {epoch}, Training Loss: {np.mean(loss_list)}, Training Accuracy: {np.mean(accuracy_list)}")
 
-    return np.mean(loss_list)
+    return np.mean(loss_list), np.mean(accuracy_list)
 
 
 
@@ -109,12 +103,13 @@ def val_step(
 
     # define metric lists
     loss_list: list[float] = []
-    mae_list: list[float] = []
+    accuracy_list: list[float] = []
 
     # Set model to train mode
     model.eval()
 
     for inputs, targets in val_loader:
+        
         
         inputs, targets = inputs.to(device), targets.to(device)
 
@@ -125,22 +120,23 @@ def val_step(
         loss_value = loss(outputs, targets)
         loss_list.append(loss_value.item())
 
-        # Compute mae
-        # mae_val = MAE(outputs, targets)
-        # mae_list.append(mae_val.item())
+        # Compute accuracy
+        acc = accuracy(outputs, targets)
+        accuracy_list.append(acc)
+
 
     # write on tensorboard
     if writer is not None:
         writer.add_scalar("val/loss", np.mean(loss_list), epoch)
-        writer.add_scalar("val/mae", np.mean(mae_list), epoch)
-    # print('Validation mae:', np.mean(mae_list))
+
 
     # Print losses
     # Define print cadence
     print_every = 1
     if epoch % print_every == 0:
-        print(f"Epoch {epoch}, Val Loss: {np.mean(loss_list)}")
-        print(f"Epoch {epoch}, Val MAE: {np.mean(mae_list)}")
+        print(f"Epoch {epoch}, Val Loss: {np.mean(loss_list)}, Val Accuracy: {np.mean(accuracy_list)}")
+
+    return np.mean(loss_list), np.mean(accuracy_list)
 
 
 @torch.no_grad()

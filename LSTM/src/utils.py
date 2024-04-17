@@ -1,7 +1,8 @@
 import os
 import torch
 import torch.nn.functional as F
-from sklearn.manifold import TSNE
+# from sklearn.manifold import TSNE
+import pandas as pd
 
 def save_model(model, model_path: str):
     """Save the trained SkipGram model to a file, creating the directory if it does not exist.
@@ -26,6 +27,8 @@ def save_model(model, model_path: str):
 
 
 def train_model(model, train_loader, test_loader, epochs, learning_rate, device, print_every=1000, patience=10):
+
+
     """
     Train a Pytorch model.
 
@@ -118,3 +121,46 @@ def train_model(model, train_loader, test_loader, epochs, learning_rate, device,
             if epochs_no_improve >= patience:
                 print(f"Early stopping triggered at epoch {epoch}. No improvement in test loss for {patience} consecutive epochs.")
                 break  # Stop training early
+
+
+def accuracy(outputs, labels):
+
+
+    """Calculate the accuracy of the model given the outputs and the labels.
+
+    Args:
+        outputs (torch.Tensor): The model outputs.
+        labels (torch.Tensor): The true labels.
+
+    Returns:
+        float: The accuracy of the model.
+    """
+    # Get the predicted class
+    _, predicted = torch.max(outputs, 1)
+    
+    # Calculate the accuracy
+    correct = (predicted == labels).sum().item()
+    total = labels.size(0)
+    return correct / total
+
+
+def save_data(train, val, path):
+
+    # We will save a csv file. 
+
+    df = pd.DataFrame({'train_loss': train["loss"], 'train_accuracy': train["accuracy"], 'val_loss': val["loss"], 'val_accuracy': val["accuracy"]})
+
+    df.to_csv(path, index=False)
+
+
+def read_data(path):
+    
+    # Read the csv file and return the data as two dictionaries
+
+    df = pd.read_csv(path)
+
+    train = {"loss": df["train_loss"].tolist(), "accuracy": df["train_accuracy"].tolist()}
+    val = {"loss": df["val_loss"].tolist(), "accuracy": df["val_accuracy"].tolist()}
+
+    return train, val
+
