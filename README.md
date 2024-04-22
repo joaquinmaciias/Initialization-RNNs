@@ -80,10 +80,10 @@ In order to start the RNN train and validation loop, the command **python -m src
 
 ## Visual Conclusions
 
-<img src='images/accuracy_histogram.png' width='500' height='400' align="center" alt='RNN Accuracy results per initialization strategy '> <img src='images/LSTM_models2.png' width='500' height='400' align="center" alt='LSTM Train and Validation loss evolution per strategy'>
-
+<img src='images/accuracy_histogram.png' width='500' height='400' align="center" alt='RNN Accuracy results per initialization strategy '>
 Figure 1: RNN Accuracy results per initialization strategy
 
+<img src='images/LSTM_models2.png' width='500' height='400' align="center" alt='LSTM Train and Validation loss evolution per strategy'>
 Figure 2: LSTM Train and Validation loss evolution per strategy
 
 
