@@ -76,5 +76,15 @@ In order to analyze the effect of different initializations on RNN , we have use
 #### RNN train and validation steps
 In order to start the RNN train and validation loop, the command **python -m src.train** should be executed.
 
+<hr>
+
+## Visual Conclusions
+
+### RNN Accuracy results per initialization strategy
+<img src='images/accuracy_histogram.png' width='500' height='400'>
+
+### LSTM Train and Validation loss evolution per strategy
+<img src='images/LSTM_models2.png' width='500' height='400'>
+
 
 
