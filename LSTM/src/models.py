@@ -22,23 +22,20 @@ class MyModel(nn.Module):
             self.lstm.weight_ih_l0.data = weights.get('weight_ih')
             self.lstm.weight_hh_l0.data = weights.get('weight_hh')
 
-        # Classifier layer
-        self.fc = nn.Linear(hidden_size*self.context_size, output_size)
+
+        
+        # Fully connected layer
+        
+        self.fc1 = nn.Linear(hidden_size*self.context_size, output_size)
 
         
     def forward(self, x): #, h0 = None, c0 = None):
 
         x = self.embedding(x)
 
-        # if h0 is None and c0 is None:
-        #     outputs, hn = self.lstm(x)
-        # else:
-        #     outputs, hn = self.lstm(x, (h0, c0))
-
         outputs, hn = self.lstm(x)
         outputs = outputs.reshape(-1, self.hidden_size*self.context_size)
 
-        out = self.fc(outputs)
+        out = self.fc1(outputs)
 
-        # We view to get a 2D vector of shape (batch_size, output_size)
         return out

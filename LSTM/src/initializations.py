@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from typing import Tuple
 
 
 def identity_initialization(shape: torch.Tensor) -> np.ndarray:
@@ -18,7 +19,7 @@ def identity_initialization(shape: torch.Tensor) -> np.ndarray:
         raise ValueError("Only shapes of length 2 or more are supported.")
 
     # Identity matrix
-    weights = np.eye(shape[0], shape[1])
+    weights: np.ndarray = np.eye(int(shape[0].item()), int(shape[1].item()))
 
     return weights
 
@@ -39,7 +40,7 @@ def identity_001_initialization(shape: torch.Tensor) -> np.ndarray:
         raise ValueError("Only shapes of length 2 or more are supported.")
 
     # Identity matrix factorized by 0.01
-    weights = np.eye(shape[0], shape[1]) * 0.01
+    weights: np.ndarray = np.eye(int(shape[0].item()), int(shape[1].item()))*0.001
 
     return weights
 
@@ -60,7 +61,7 @@ def zeros_initialization(shape: torch.Tensor) -> np.ndarray:
         raise ValueError("Only shapes of length 2 or more are supported.")
 
     # Generate matrix with zeros
-    wieghts = np.zeros(shape)
+    wieghts: np.ndarray = np.zeros(shape)
 
     return wieghts
 
@@ -82,7 +83,7 @@ def constant_initialization(shape: torch.Tensor, value: float = 0.5) -> np.ndarr
         raise ValueError("Only shapes of length 2 or more are supported.")
 
     # Generate matrix with the given value
-    weights = np.full(shape, value)
+    weights: np.ndarray = np.full(shape, value)
 
     return weights
 
@@ -107,7 +108,7 @@ def random_normal_initialization(
         raise ValueError("Only shapes of length 2 or more are supported.")
 
     # Generate random values with a normal distribution
-    weights = np.random.normal(mean, std, shape)
+    weights: np.ndarray = np.random.normal(mean, std, shape)
 
     return weights
 
@@ -132,7 +133,7 @@ def random_uniform_initialization(
         raise ValueError("Only shapes of length 2 or more are supported.")
 
     # Generate random values with a uniform distribution
-    weights = np.random.uniform(min_val, max_val, shape)
+    weights: np.ndarray = np.random.uniform(min_val, max_val, shape)
 
     return weights
 
@@ -158,7 +159,7 @@ def truncated_normal_initialization(
         raise ValueError("Only shapes of length 2 or more are supported.")
 
     # Generate random values with a normal distribution
-    weights = np.random.normal(mean, std, shape)
+    weights: np.ndarray = np.random.normal(mean, std, shape)
 
     # Clip the values to the range of two standard deviations
     weights = np.clip(weights, -2*std, 2*std)
@@ -183,11 +184,11 @@ def xavier_initialization(shape: torch.Tensor) -> np.ndarray:
         raise ValueError("Only shapes of length 2 or more are supported.")
 
     # Define the limits for the uniform distribution
-    min_limit = -np.sqrt(1 / shape[0])
-    max_limit = np.sqrt(1 / shape[0])
+    min_limit: float = -np.sqrt(1 / shape[0])
+    max_limit: float = np.sqrt(1 / shape[0])
 
     # Generate random values with a uniform distribution
-    weights = np.random.uniform(min_limit, max_limit, shape)
+    weights: np.ndarray = np.random.uniform(min_limit, max_limit, shape)
 
     return weights
 
@@ -209,11 +210,11 @@ def normalized_xavier_initialization(shape: torch.Tensor) -> np.ndarray:
         raise ValueError("Only shapes of length 2 or more are supported.")
 
     # Define the limits for the uniform distribution
-    min_limit = -np.sqrt(6 / (shape[0] + shape[1]))
-    max_limit = np.sqrt(6 / (shape[0] + shape[1]))
+    min_limit: float = -np.sqrt(6 / (shape[0] + shape[1]))
+    max_limit:float = np.sqrt(6 / (shape[0] + shape[1]))
 
     # Generate random values with a uniform distribution
-    weights = np.random.uniform(min_limit, max_limit, shape)
+    weights: np.ndarray = np.random.uniform(min_limit, max_limit, shape)
 
     return weights
 
@@ -235,11 +236,11 @@ def kaiming_initialization(shape: torch.Tensor) -> np.ndarray:
         raise ValueError("Only shapes of length 2 or more are supported.")
 
     # Define the mean and standard deviation
-    mean = 0
-    std = np.sqrt(2 / shape[0])
+    mean: int = 0
+    std: float = np.sqrt(2 / shape[0])
 
     # Generate random values with a normal distribution
-    weights = np.random.normal(mean, std, shape)
+    weights: np.ndarray = np.random.normal(mean, std, shape)
 
     return weights
 
@@ -265,21 +266,21 @@ def orthogonal_initialization(shape: torch.Tensor, gain: float = 1.0) -> np.ndar
         raise ValueError("Only shapes of length 2 or more are supported.")
 
     # Calculate the number of rows for the matrix by multiplying the dimensions
-    num_rows = 1
+    num_rows: int = 1
     for dim in shape[:-1]:
-        num_rows *= dim
-    num_cols = shape[-1]
+        num_rows *= dim.item()
+    num_cols: int  = int(shape[-1].item())
 
-    flat_shape = (max(num_rows, num_cols), min(num_rows, num_cols))
+    flat_shape: Tuple[int, int] = (max(num_rows, num_cols), min(num_rows, num_cols))
 
     # Generate a random matrix with normal distribution
-    random_matrix = np.random.normal(0.0, 1.0, flat_shape)
+    random_matrix: np.ndarray = np.random.normal(0.0, 1.0, flat_shape)
 
     # Compute the qr factorization
     q, r = np.linalg.qr(random_matrix)
 
     # Make the diagonal elements of 'r' non-negative
-    d = np.diag(r, 0)
+    d: np.ndarray = np.diag(r, 0)
     q *= np.sign(d)
 
     # If the number of rows is less than the number of columns, transpose the matrix
@@ -288,8 +289,8 @@ def orthogonal_initialization(shape: torch.Tensor, gain: float = 1.0) -> np.ndar
 
     # Reshape the matrix to the desired shape
     with torch.no_grad():
-        q = torch.from_numpy(q)
-        q = q.to(torch.float32)
-        weights = q * gain
+        q_torch: torch.Tensor = torch.from_numpy(q)
+        q_torch = q_torch.to(torch.float32)
+        weights: np.ndarray = np.ndarray(q_torch * gain)
 
     return weights

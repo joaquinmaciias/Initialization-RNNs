@@ -5,6 +5,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from utils import accuracy
+from typing import Tuple
 
 
 @torch.enable_grad()
@@ -16,7 +17,7 @@ def train_step(
     writer: SummaryWriter,
     epoch: int,
     device: torch.device
-) -> None:
+) -> Tuple[float, float]:
     """
     This function train the model.
 
@@ -48,6 +49,7 @@ def train_step(
         # Forward pass of our model -> get the predictions made by our model
 
         outputs = model(inputs)
+
 
         # Compute loss
         loss_value = loss(outputs, targets)
@@ -85,17 +87,14 @@ def val_step(
     writer: SummaryWriter,
     epoch: int,
     device: torch.device,
-) -> None:
+) -> Tuple[float, float]:
     """
     This function train the model.
 
     Args:
         model: model to train.
         val_data: dataloader of validation data.
-        mean: mean of the target.
-        std: std of the target.
         loss: loss function.
-        scheduler: scheduler.
         writer: writer for tensorboard.
         epoch: epoch of the training.
         device: device for running operations.
@@ -112,7 +111,7 @@ def val_step(
         
         
         inputs, targets = inputs.to(device), targets.to(device)
-
+        inputs.float()
         # Forward pass of our model -> get the predictions made by our model
         outputs = model(inputs)
 
@@ -160,17 +159,18 @@ def t_step(
     """
 
     model.eval()
-    test_loss = 0
+    accuracy_list = []
 
     with torch.no_grad():
 
         for inputs, targets in test_loader:
-        
+
+
             inputs, targets = inputs.to(device), targets.to(device)
-
+            
             outputs = model(inputs)
-            loss = loss(outputs, targets)
 
-            test_loss += loss.item()
+            acc = accuracy(outputs, targets)
+            accuracy_list.append(acc)
 
-    return test_loss / len(test_loader)
+    return  np.mean(accuracy_list)

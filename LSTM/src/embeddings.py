@@ -6,15 +6,11 @@ import os
 import numpy as np
 import random
 
-try:
-    from src.data import load_data
-    from src.utils import save_model, train_model, save_model
-except:
-    from data import load_data
-    from utils import save_model, train_model, save_model
-    from train_functions import train_step, val_step
-    import parameters as p
-    # import main_tmp as main
+from data_processing import load_data
+from utils import save_model, train_model, save_model
+from train_functions import train_step, val_step
+import parameters as p
+# import main_tmp as main
 
 
 
