@@ -29,11 +29,18 @@ def train_step(
         model: model to train.
         train_data: dataloader of train data.
         initialization: initialization of the model.
+        input_dim: input dimension.
+        sequence_length: sequence length.
         loss: loss function.
         optimizer: optimizer.
         writer: writer for tensorboard.
         epoch: epoch of the training.
         device: device for running operations.
+
+    Returns:
+        mean loss: mean loss of the epoch.
+        epoch: epoch of the training.
+
     """
 
     # TODO
@@ -59,12 +66,12 @@ def train_step(
         optimizer.step()
 
         losses.append(loss_value.item())
-        
-    # write on tensorboard
-    writer.add_scalar("train/loss", np.mean(losses), epoch)
 
-    # return the loss values
-    return np.mean(losses), epoch
+    # write on tensorboard
+    mean_loss = float(np.mean(losses))
+    writer.add_scalar("train/loss", mean_loss, epoch)
+
+    return mean_loss, epoch
 
 
 @torch.no_grad()
@@ -84,12 +91,17 @@ def val_step(
     Args:
         model: model to train.
         val_data: dataloader of validation data.
-        initialization: initialization of the model.
+        input_dim: input dimension.
+        sequence_length: sequence length.
         loss: loss function.
         scheduler: scheduler.
         writer: writer for tensorboard.
         epoch: epoch of the training.
         device: device for running operations.
+
+    Returns:
+        mean loss: mean loss of the epoch.
+        epoch: epoch of the training.
     """
 
     losses: list[float] = []
@@ -112,10 +124,10 @@ def val_step(
         losses.append(loss_value.item())
 
     # write on tensorboard
-    writer.add_scalar("val/loss", np.mean(losses), epoch)
+    mean_loss = float(np.mean(losses))
+    writer.add_scalar("val/loss", mean_loss, epoch)
 
-    # return the loss values
-    return np.mean(losses), epoch
+    return mean_loss, epoch
 
 
 @torch.no_grad()
@@ -132,18 +144,20 @@ def test_step(
     Args:
         model: model to make predcitions.
         test_data: dataset for testing.
+        input_dim: input dimension.
+        sequence_length: sequence length.
         device: device for running operations.
 
     Returns:
-        mae of the test data.
+        mae: mean absolute error of the model.
     """
 
     # TODO
     # set model to evaluation mode
     model.eval()
 
-    total : int = 0
-    correct : int = 0
+    total: int = 0
+    correct: int = 0
 
     with torch.no_grad():
 

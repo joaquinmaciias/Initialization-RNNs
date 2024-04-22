@@ -20,7 +20,6 @@ def identity_initialization(weight: torch.Tensor):
         weight.copy_(torch.from_numpy(identity_matrix).to(weight.device))
 
 
-
 def identity_001_initialization(weight: torch.Tensor):
     """
     Indentity matrix with 0.01 values initializer.
@@ -75,8 +74,8 @@ def constant_initialization(weight: torch.Tensor, value: float = 0.5):
 
 
 def random_normal_initialization(
-        weight: torch.Tensor, mean: float = 0, std: float = 1)\
-            :
+        weight: torch.Tensor, mean: float = 0, std: float = 1
+        ):
     """
     Random normal initializer, with a normal distribution with the given mean and std.
 
@@ -98,8 +97,8 @@ def random_normal_initialization(
 
 
 def random_uniform_initialization(
-        weight: torch.Tensor, min_val: float = -1, max_val: float = 1)\
-            :
+        weight: torch.Tensor, min_val: float = -1, max_val: float = 1
+        ):
     """
     Random uniform initializer, with a uniform distribution given min_val and max_val.
 
@@ -120,8 +119,8 @@ def random_uniform_initialization(
 
 
 def truncated_normal_initialization(
-        weight: torch.Tensor, mean: float = 0, std: float = 1)\
-        :
+        weight: torch.Tensor, mean: float = 0, std: float = 1
+        ):
     """
     Truncated normal initializer, with a normal distribution with the given mean and st.
     The values are truncated to the range of two standard deviations.
@@ -135,7 +134,6 @@ def truncated_normal_initialization(
     # Check if the shape is valid
     if weight.ndim != 2:
         raise ValueError("Only shapes of length 2 or more are supported.")
-
 
     with torch.no_grad():
         # Generate random values with a normal distribution
@@ -160,9 +158,9 @@ def xavier_initialization(weight: torch.Tensor):
     # Check if the shape is valid
     if weight.ndim != 2:
         raise ValueError("Only shapes of length 2 or more are supported.")
-    
+
     # Calculate the n_in (number of input units)
-    n_in = weight.size(0) 
+    n_in = weight.size(0)
 
     # Define the limits for the Xavier/Glorot uniform distribution
     limit = np.sqrt(1 / n_in)
@@ -187,7 +185,7 @@ def normalized_xavier_initialization(weight: torch.Tensor):
     # Check if the shape is valid
     if weight.ndim != 2:
         raise ValueError("Only shapes of length 2 or more are supported.")
-    
+
     # Calculate the n_in (number of input units) and n_out (number of output units)
     n_in = weight.size(0)
     n_out = weight.size(1)
@@ -215,7 +213,7 @@ def kaiming_initialization(weight: torch.Tensor):
     # Check if the shape is valid
     if weight.ndim != 2:
         raise ValueError("Only shapes of length 2 or more are supported.")
-    
+
     # Calculate the n_in (number of input units)
     n_in = weight.size(0)
 
@@ -245,9 +243,11 @@ def orthogonal_initialization(weight: torch.Tensor, gain: float = 1.0):
     # Orthogonal matrices are defined in 2D spaces or higher
     if weight.ndim != 2:
         raise ValueError("Only shapes of length 2 or more are supported.")
-    
+
     # Generate a random matrix with normal distribution
-    random_matrix = np.random.normal(0.0, 1.0, (max(weight.size(0), weight.size(1)), min(weight.size(0), weight.size(1))))
+    random_matrix = np.random.normal(0.0, 1.0, (
+        max(weight.size(0), weight.size(1)), min(weight.size(0), weight.size(1)))
+        )
 
     # Compute the QR factorization
     q, r = np.linalg.qr(random_matrix)

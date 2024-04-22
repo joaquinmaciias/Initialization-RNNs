@@ -1,10 +1,6 @@
 # deep learning libraries
 import torch
 
-# other libraries
-import math
-from typing import Any
-
 # our libraries
 import src.initializations as init
 
@@ -13,15 +9,19 @@ class RNN(torch.nn.Module):
     """
     This class represents a custom RNN model with configurable initialization.
     """
-    
-    def __init__(self, input_dim: int, hidden_size: int, num_layers: int, num_classes: int, initialization: str) -> None:
+
+    def __init__(
+            self, input_dim: int, hidden_size: int, num_layers: int,
+            num_classes: int, initialization: str
+            ) -> None:
         """
         Initialize the RNN model.
-        
+
         Args:
             input_dim (int): Dimension of the input feature.
             hidden_size (int): Number of units in the hidden layer.
-            dropout_rate (float): Dropout rate.
+            num_layers (int): Number of recurrent layers.
+            num_classes (int): Number of classes in the dataset.
             initialization (str): Method to use for parameter initialization.
         """
         super(RNN, self).__init__()
@@ -34,31 +34,36 @@ class RNN(torch.nn.Module):
         self.num_classes = num_classes
 
         # RNN Layer
-        self.rnn = torch.nn.RNN(input_size=input_dim, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
-                
+        self.rnn = torch.nn.RNN(
+            input_size=input_dim, hidden_size=hidden_size,
+            num_layers=num_layers, batch_first=True
+            )
+
         # Fully connected layer
         self.fc = torch.nn.Linear(hidden_size, self.num_classes)
-        
+
         # Initialize parameters
         self.reset_parameters(initialization)
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """
         Forward pass of the model.
-        
+
         Args:
-            inputs (torch.Tensor): Input tensor of shape [batch_size, sequence_length, input_dim]
+            inputs (torch.Tensor): Input tensor of shape
+                        [batch_size, sequence_length, input_dim]
 
         Returns:
             torch.Tensor: Output tensor of shape [batch_size, output_dim]
         """
 
         # Initialize hidden state
-        h0 = torch.zeros(self.num_layers, inputs.size(0), self.hidden_size).to(inputs.device)
+        h0 = torch.zeros(
+            self.num_layers, inputs.size(0), self.hidden_size).to(inputs.device)
 
         # RNN layer
         rnn_output, _ = self.rnn(inputs, h0)
-                
+
         # Fully connected layer
         output = self.fc(rnn_output[:, -1, :])
 
@@ -69,7 +74,7 @@ class RNN(torch.nn.Module):
         Initialize the parameters of the RNN and linear layers.
         """
         for name, param in self.named_parameters():
-            if 'weight_ih' in name or 'weight_hh' in name or 'fc.weight' in name:  # Weights of RNN and Linear
+            if 'weight_ih' in name or 'weight_hh' in name or 'fc.weight' in name:
                 if initialization == "identity":
                     init.identity_initialization(param)
                 elif initialization == "identity_001":

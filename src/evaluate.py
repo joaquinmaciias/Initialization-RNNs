@@ -4,7 +4,6 @@ from torch.jit import RecursiveScriptModule
 
 # other libraries
 from typing import Final
-import os
 
 # own modules
 from src.data_MNIST import load_data
@@ -22,12 +21,14 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cp
 set_seed(42)
 
 
-def main(name):
+def main(name: str):
     """
     This function is the main program.
+
+    Args:
+        name (str): Name of the model to evaluate.
     """
-     # hyperparameters
-    epochs: int = 20
+    # hyperparameters
     batch_size: int = 128
     hidden_dim: int = 128
     num_workers: int = 4
@@ -35,22 +36,27 @@ def main(name):
     sequence_length: int = 28
 
     # define initializations
-    initializations = ["zeros", "constant05", "constant_05", "random_normal", "random_uniform",\
-                        "truncated_normal", "xavier", "normalized_xavier", "kaiming", "orthogonal"]
+    initializations = [
+        "zeros", "constant05", "constant_05", "random_normal",
+        "random_uniform", "truncated_normal", "xavier",
+        "normalized_xavier", "kaiming", "orthogonal"
+    ]
 
     # load data MNIST
     _, _, test_data = load_data(batch_size=batch_size, num_workers=num_workers)
 
     accuracies: dict = {}
-      
+
     for initialization in initializations:
         print(f"Evaluating model with initialization: {initialization}")
 
         # define name
-        name: str = f"model_rnn_batch_{batch_size}_hidden_{hidden_dim}_init_{initialization}"
+        name_model: str = (
+            f"{name}_batch_{batch_size}_hidden_{hidden_dim}_init_{initialization}"
+        )
 
         # load model
-        model: RecursiveScriptModule = load_model(name).to(device)
+        model: RecursiveScriptModule = load_model(name_model).to(device)
 
         # get mae
         accuracy = test_step(model, test_data, input_dim, sequence_length, device)
@@ -62,6 +68,7 @@ def main(name):
 
     # plot histogram
     accuracy_histogram(accuracies)
+
 
 if __name__ == "__main__":
     main("model_rnn")
